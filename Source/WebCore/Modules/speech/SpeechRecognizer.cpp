@@ -125,7 +125,7 @@ void SpeechRecognizer::stopCapture()
     m_delegateCallback(SpeechRecognitionUpdate::create(clientIdentifier(), SpeechRecognitionUpdateType::AudioEnd));
 }
 
-#if !HAVE(SPEECHRECOGNIZER)
+#if !HAVE(SPEECHRECOGNIZER) && !USE(GSTREAMER)
 
 void SpeechRecognizer::dataCaptured(const MediaTime&, const PlatformAudioData&, const AudioStreamDescription&, size_t)
 {

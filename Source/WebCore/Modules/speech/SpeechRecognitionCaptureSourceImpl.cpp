@@ -34,6 +34,9 @@
 #if PLATFORM(COCOA)
 #include "CAAudioStreamDescription.h"
 #include "WebAudioBufferList.h"
+#elif USE(GSTREAMER)
+#include "GStreamerAudioData.h"
+#include "GStreamerAudioStreamDescription.h"
 #endif
 
 namespace WebCore {
@@ -97,6 +100,32 @@ void SpeechRecognitionCaptureSourceImpl::pullSamplesAndCallDataCallback(AudioSam
 
     m_dataCallback(time, data, audioDescription, sampleCount);
 }
+#elif USE(GSTREAMER) && USE(WHISPER)
+void SpeechRecognitionCaptureSourceImpl::pullSamplesAndCallDataCallback(AudioSampleDataSource* dataSource, const MediaTime& time, const GStreamerAudioStreamDescription& audioDescription, size_t sampleCount)
+{
+    ASSERT(isMainThread());
+
+    auto data = GStreamerAudioData { nullptr, audioDescription.getInfo() };
+    {
+        Locker locker { m_dataSourceLock };
+        if (m_dataSource.get() != dataSource)
+            return;
+
+        auto gstSample = m_dataSource->pullSamples(sampleCount, time.timeValue(), 0, AudioSampleDataSource::Copy);
+        auto description = m_dataSource->outputDescription();
+        if (!gstSample || !description)
+            return;
+
+        data.setSample(WTFMove(gstSample));
+        data.setAudioInfo(description->getInfo());
+    }
+
+    GStreamerAudioStreamDescription outputDescription(data.getAudioInfo());
+    GstMappedBuffer mappedBuffer(gst_sample_get_buffer(data.getSample().get()), GST_MAP_READ);
+    // We transfer converted audio samples for whisper.cpp. Whisper.cpp takes
+    // float as the audio sample format, so we adjust the sample count accordingly.
+    m_dataCallback(time, data, outputDescription, mappedBuffer.size() / outputDescription.sampleWordSize());
+}
 #endif
 
 void SpeechRecognitionCaptureSourceImpl::audioSamplesAvailable(const WTF::MediaTime& time, const PlatformAudioData& data, const AudioStreamDescription& description, size_t sampleCount)
@@ -104,29 +133,37 @@ void SpeechRecognitionCaptureSourceImpl::audioSamplesAvailable(const WTF::MediaT
     if (isMainThread())
         return m_dataCallback(time, data, description, sampleCount);
 
-#if PLATFORM(COCOA)
+#if PLATFORM(COCOA) || (USE(GSTREAMER) && USE(WHISPER))
     // Heap allocations are forbidden on the audio thread for performance reasons so we need to
     // explicitly allow the following allocation(s).
     DisableMallocRestrictionsForCurrentThreadScope scope;
+#if PLATFORM(COCOA)
     ASSERT(description.platformDescription().type == PlatformDescription::CAAudioStreamBasicType);
+#elif USE(GSTREAMER)
+    ASSERT(description.platformDescription().type == PlatformDescription::GStreamerAudioStreamDescription);
+#endif
     // Use tryLock() to avoid contention in the real-time audio thread.
     if (!m_dataSourceLock.tryLock())
         return;
 
     Locker locker { AdoptLock, m_dataSourceLock };
+#if PLATFORM(COCOA)
     auto audioDescription = toCAAudioStreamDescription(description);
+#elif USE(GSTREAMER)
+    auto audioDescription = static_cast<const GStreamerAudioStreamDescription&>(description);
+#endif
     if (!m_dataSource || !m_dataSource->inputDescription() || *m_dataSource->inputDescription() != description) {
         auto dataSource = AudioSampleDataSource::create(audioDescription.sampleRate(), m_source.get());
         if (dataSource->setInputFormat(audioDescription)) {
             callOnMainThread([this, weakThis = WeakPtr { *this }] {
                 if (!weakThis)
                     return;
-    
+
                 m_stateUpdateCallback(SpeechRecognitionUpdate::createError(m_clientIdentifier, SpeechRecognitionError { SpeechRecognitionErrorType::AudioCapture, "Unable to set input format"_s }));
             });
             return;
         }
-        
+
         if (dataSource->setOutputFormat(audioDescription)) {
             callOnMainThread([this, weakThis = WeakPtr { *this }] {
                 if (!weakThis)

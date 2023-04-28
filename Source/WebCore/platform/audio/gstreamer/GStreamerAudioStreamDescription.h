@@ -93,7 +93,16 @@ public:
     uint32_t numberOfChannels() const final { return GST_AUDIO_INFO_CHANNELS(&m_info); }
     uint32_t sampleWordSize() const final { return GST_AUDIO_INFO_BPS(&m_info); }
 
-    bool operator==(const GStreamerAudioStreamDescription& other) { return gst_audio_info_is_equal(&m_info, &other.m_info); }
+    bool operator==(const GStreamerAudioStreamDescription& other) const { return gst_audio_info_is_equal(&m_info, &other.m_info); }
+    bool operator!=(const GStreamerAudioStreamDescription& other) const { return !operator == (other); }
+
+    bool operator==(const AudioStreamDescription& other) const
+    {
+        if (other.platformDescription().type != PlatformDescription::GStreamerAudioStreamDescription)
+            return false;
+        return operator==(static_cast<const GStreamerAudioStreamDescription&>(other));
+    }
+    bool operator!=(const AudioStreamDescription& other) const { return !operator==(other); }
 
     const GRefPtr<GstCaps>& caps()
     {

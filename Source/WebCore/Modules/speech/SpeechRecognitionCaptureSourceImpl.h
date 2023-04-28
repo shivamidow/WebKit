@@ -31,7 +31,7 @@
 #include "SpeechRecognitionConnectionClientIdentifier.h"
 #include <wtf/Lock.h>
 
-#if PLATFORM(COCOA)
+#if PLATFORM(COCOA) || (USE(GSTREAMER) && USE(WHISPER))
 #include "AudioSampleDataSource.h"
 #endif
 
@@ -63,6 +63,8 @@ private:
 
 #if PLATFORM(COCOA)
     void pullSamplesAndCallDataCallback(AudioSampleDataSource*, const WTF::MediaTime&, const CAAudioStreamDescription&, size_t sampleCount);
+#elif USE(GSTREAMER) && USE(WHISPER)
+    void pullSamplesAndCallDataCallback(AudioSampleDataSource*, const WTF::MediaTime&, const GStreamerAudioStreamDescription&, size_t sampleCount);
 #endif
 
     // RealtimeMediaSource::Observer
@@ -75,7 +77,7 @@ private:
     StateUpdateCallback m_stateUpdateCallback;
     Ref<RealtimeMediaSource> m_source;
 
-#if PLATFORM(COCOA)
+#if PLATFORM(COCOA) || (USE(GSTREAMER) && USE(WHISPER))
     RefPtr<AudioSampleDataSource> m_dataSource WTF_GUARDED_BY_LOCK(m_dataSourceLock);
     Lock m_dataSourceLock;
 #endif

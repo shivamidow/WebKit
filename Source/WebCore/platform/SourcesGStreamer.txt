@@ -36,12 +36,17 @@ Modules/mediastream/gstreamer/GStreamerSctpTransportBackend.cpp
 Modules/mediastream/gstreamer/GStreamerStatsCollector.cpp
 Modules/mediastream/gstreamer/GStreamerWebRTCUtils.cpp
 
+Modules/speech/gstreamer/GStreamerSpeechRecognizerTask.cpp
+Modules/speech/gstreamer/GStreamerSpeechRecognizerTaskMock.cpp
+Modules/speech/gstreamer/SpeechRecognizerGStreamer.cpp
+
 Modules/webaudio/MediaStreamAudioSourceGStreamer.cpp
 
 platform/audio/gstreamer/AudioDecoderGStreamer.cpp
 platform/audio/gstreamer/AudioDestinationGStreamer.cpp
 platform/audio/gstreamer/AudioEncoderGStreamer.cpp
 platform/audio/gstreamer/AudioFileReaderGStreamer.cpp
+platform/audio/gstreamer/AudioSampleDataSource.cpp
 platform/audio/gstreamer/AudioSourceProviderGStreamer.cpp
 platform/audio/gstreamer/FFTFrameGStreamer.cpp
 platform/audio/gstreamer/PlatformRawAudioDataGStreamer.cpp

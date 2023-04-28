@@ -27,6 +27,7 @@
 
 #include "MessageReceiver.h"
 #include "MessageSender.h"
+#include "ThreadedSpeechRecognitionServer.h"
 #include <WebCore/PageIdentifier.h>
 #include <WebCore/SpeechRecognitionConnection.h>
 
@@ -43,7 +44,11 @@ class WebPage;
 
 using SpeechRecognitionConnectionIdentifier = WebCore::PageIdentifier;
 
-class WebSpeechRecognitionConnection final : public WebCore::SpeechRecognitionConnection, private IPC::MessageReceiver, private IPC::MessageSender {
+class WebSpeechRecognitionConnection final : public WebCore::SpeechRecognitionConnection, public IPC::MessageReceiver, private IPC::MessageSender
+#if USE(GSTREAMER)
+    , public ThreadedSpeechRecognitionServer::Client
+#endif
+{
 public:
     static Ref<WebSpeechRecognitionConnection> create(SpeechRecognitionConnectionIdentifier);
 
@@ -69,6 +74,12 @@ private:
 
     SpeechRecognitionConnectionIdentifier m_identifier;
     HashMap<WebCore::SpeechRecognitionConnectionClientIdentifier, WeakPtr<WebCore::SpeechRecognitionConnectionClient>> m_clientMap;
+
+#if USE(GSTREAMER)
+    Ref<ThreadedSpeechRecognitionServer> createSpeechRecognitionServer(SpeechRecognitionConnectionIdentifier);
+    RefPtr<ThreadedSpeechRecognitionServer> m_speechRecognitionServer;
+#endif
+
 };
 
 } // namespace WebKit

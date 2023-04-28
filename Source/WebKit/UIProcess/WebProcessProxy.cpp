@@ -2173,6 +2173,27 @@ void WebProcessProxy::destroySpeechRecognitionServer(SpeechRecognitionServerIden
         removeMessageReceiver(Messages::SpeechRecognitionServer::messageReceiverName(), identifier);
 }
 
+#if USE(GSTREAMER)
+void WebProcessProxy::requestSpeechRecognitionPermission(SpeechRecognitionServerIdentifier identifier, const WebCore::SpeechRecognitionRequestInfo& requestInfo, std::optional<WebCore::CaptureDevice> captureDevice, CompletionHandler<void(std::optional<WebCore::SpeechRecognitionError>&&)>&& completionHandler)
+{
+    RefPtr<WebPageProxy> targetPage;
+    for (auto& page : pages()) {
+        if (page && page->webPageID() == identifier) {
+            targetPage = WTFMove(page);
+            break;
+        }
+    }
+
+    if (!targetPage) {
+        completionHandler(WebCore::SpeechRecognitionError { SpeechRecognitionErrorType::NotAllowed, "Page no longer exists"_s });
+        return;
+    }
+
+    SpeechRecognitionRequest request(WTFMove(const_cast<SpeechRecognitionRequestInfo&>(requestInfo)));
+    targetPage->requestSpeechRecognitionPermission(request, WTFMove(captureDevice), WTFMove(completionHandler));
+}
+#endif
+
 #if ENABLE(MEDIA_STREAM)
 
 SpeechRecognitionRemoteRealtimeMediaSourceManager& WebProcessProxy::ensureSpeechRecognitionRemoteRealtimeMediaSourceManager()
@@ -2187,7 +2208,7 @@ SpeechRecognitionRemoteRealtimeMediaSourceManager& WebProcessProxy::ensureSpeech
 
 void WebProcessProxy::muteCaptureInPagesExcept(WebCore::PageIdentifier pageID)
 {
-#if PLATFORM(COCOA)
+#if PLATFORM(COCOA) || USE(GSTREAMER)
     for (auto& page : globalPages()) {
         if (page && page->webPageID() != pageID)
             page->setMediaStreamCaptureMuted(true);
@@ -2196,6 +2217,13 @@ void WebProcessProxy::muteCaptureInPagesExcept(WebCore::PageIdentifier pageID)
     UNUSED_PARAM(pageID);
 #endif
 }
+
+#if USE(GSTREAMER)
+void WebProcessProxy::requestToMuteCaptureInPagesExcept(WebCore::PageIdentifier pageID)
+{
+    muteCaptureInPagesExcept(pageID);
+}
+#endif
 
 #endif
 

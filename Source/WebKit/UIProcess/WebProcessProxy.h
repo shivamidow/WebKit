@@ -81,6 +81,7 @@ class ResourceRequest;
 struct NotificationData;
 struct PluginInfo;
 struct PrewarmInformation;
+struct SpeechRecognitionError;
 class SecurityOriginData;
 enum class PermissionName : uint8_t;
 enum class RenderAsTextFlag : uint16_t;
@@ -444,7 +445,11 @@ public:
 #if ENABLE(MEDIA_STREAM)
     static void muteCaptureInPagesExcept(WebCore::PageIdentifier);
     SpeechRecognitionRemoteRealtimeMediaSourceManager& ensureSpeechRecognitionRemoteRealtimeMediaSourceManager();
+#if USE(GSTREAMER)
+    void requestToMuteCaptureInPagesExcept(WebCore::PageIdentifier);
 #endif
+#endif
+
     void pageMutedStateChanged(WebCore::PageIdentifier, WebCore::MediaProducerMutedStateFlags);
     void pageIsBecomingInvisible(WebCore::PageIdentifier);
 
@@ -597,6 +602,9 @@ private:
 
     void createSpeechRecognitionServer(SpeechRecognitionServerIdentifier);
     void destroySpeechRecognitionServer(SpeechRecognitionServerIdentifier);
+#if USE(GSTREAMER)
+    void requestSpeechRecognitionPermission(SpeechRecognitionServerIdentifier, const WebCore::SpeechRecognitionRequestInfo&, std::optional<WebCore::CaptureDevice>, CompletionHandler<void(std::optional<WebCore::SpeechRecognitionError>&&)>&&);
+#endif
 
     void systemBeep();
     

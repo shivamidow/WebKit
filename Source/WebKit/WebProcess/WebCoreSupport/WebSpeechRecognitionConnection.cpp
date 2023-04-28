@@ -32,9 +32,15 @@
 #include "WebProcess.h"
 #include "WebProcessProxyMessages.h"
 #include "WebSpeechRecognitionConnectionMessages.h"
+#include <WebCore/MockRealtimeMediaSourceCenter.h>
 #include <WebCore/SpeechRecognitionConnectionClient.h>
 #include <WebCore/SpeechRecognitionRequestInfo.h>
 #include <WebCore/SpeechRecognitionUpdate.h>
+
+#if USE(GSTREAMER)
+#include <WebCore/SpeechRecognitionCaptureSource.h>
+#include <WebCore/SpeechRecognizer.h>
+#endif
 
 namespace WebKit {
 
@@ -47,7 +53,11 @@ WebSpeechRecognitionConnection::WebSpeechRecognitionConnection(SpeechRecognition
     : m_identifier(identifier)
 {
     WebProcess::singleton().addMessageReceiver(Messages::WebSpeechRecognitionConnection::messageReceiverName(), m_identifier, *this);
+#if USE(GSTREAMER)
+    m_speechRecognitionServer = createSpeechRecognitionServer(m_identifier);
+#else
     send(Messages::WebProcessProxy::CreateSpeechRecognitionServer(m_identifier), 0);
+#endif
 
 #if ENABLE(MEDIA_STREAM)
     WebProcess::singleton().ensureSpeechRecognitionRealtimeMediaSourceManager();
@@ -56,7 +66,9 @@ WebSpeechRecognitionConnection::WebSpeechRecognitionConnection(SpeechRecognition
 
 WebSpeechRecognitionConnection::~WebSpeechRecognitionConnection()
 {
+#if !USE(GSTREAMER)
     send(Messages::WebProcessProxy::DestroySpeechRecognitionServer(m_identifier), 0);
+#endif
     WebProcess::singleton().removeMessageReceiver(*this);
 }
 
@@ -72,22 +84,38 @@ void WebSpeechRecognitionConnection::unregisterClient(WebCore::SpeechRecognition
 
 void WebSpeechRecognitionConnection::start(WebCore::SpeechRecognitionConnectionClientIdentifier clientIdentifier, const String& lang, bool continuous, bool interimResults, uint64_t maxAlternatives, WebCore::ClientOrigin&& clientOrigin, WebCore::FrameIdentifier frameIdentifier)
 {
+#if USE(GSTREAMER)
+    m_speechRecognitionServer->start(clientIdentifier, lang, continuous, interimResults, maxAlternatives, WTFMove(clientOrigin), frameIdentifier);
+#else
     send(Messages::SpeechRecognitionServer::Start(clientIdentifier, lang, continuous, interimResults, maxAlternatives, WTFMove(clientOrigin), frameIdentifier));
+#endif
 }
 
 void WebSpeechRecognitionConnection::stop(WebCore::SpeechRecognitionConnectionClientIdentifier clientIdentifier)
 {
+#if USE(GSTREAMER)
+    m_speechRecognitionServer->stop(clientIdentifier);
+#else
     send(Messages::SpeechRecognitionServer::Stop(clientIdentifier));
+#endif
 }
 
 void WebSpeechRecognitionConnection::abort(WebCore::SpeechRecognitionConnectionClientIdentifier clientIdentifier)
 {
+#if USE(GSTREAMER)
+    m_speechRecognitionServer->abort(clientIdentifier);
+#else
     send(Messages::SpeechRecognitionServer::Abort(clientIdentifier));
+#endif
 }
 
 void WebSpeechRecognitionConnection::invalidate(WebCore::SpeechRecognitionConnectionClientIdentifier clientIdentifier)
 {
+#if USE(GSTREAMER)
+    m_speechRecognitionServer->invalidate(clientIdentifier);
+#else
     send(Messages::SpeechRecognitionServer::Invalidate(clientIdentifier));
+#endif
 }
 
 void WebSpeechRecognitionConnection::didReceiveUpdate(WebCore::SpeechRecognitionUpdate&& update)
@@ -149,5 +177,30 @@ uint64_t WebSpeechRecognitionConnection::messageSenderDestinationID() const
 {
     return m_identifier.toUInt64();
 }
+
+#if USE(GSTREAMER)
+Ref<ThreadedSpeechRecognitionServer> WebSpeechRecognitionConnection::createSpeechRecognitionServer(SpeechRecognitionConnectionIdentifier identifier)
+{
+    auto permissionChecker = [this, weakThis = WeakPtr { *this }, identifier](auto& request, auto&& completionHandler) mutable {
+        if (!weakThis)
+            return;
+
+        SpeechRecognitionRequestInfo requestInfo { request.clientIdentifier(), request.lang(), request.continuous(), request.interimResults(), request.maxAlternatives(), request.clientOrigin(), request.frameIdentifier() };
+        auto captureDevice = SpeechRecognitionCaptureSource::findCaptureDevice();
+        sendWithAsyncReply(Messages::WebProcessProxy::RequestSpeechRecognitionPermission(identifier, requestInfo, WTFMove(captureDevice)), [this, weakThis = WeakPtr { *this }, completionHandler = WTFMove(completionHandler)](auto error) mutable {
+            if (!weakThis)
+                return;
+            m_speechRecognitionServer->performTask([completionHandler = WTFMove(completionHandler), error = WTFMove(error)]() mutable {
+                completionHandler(WTFMove(error));
+            });
+        });
+    };
+    auto checkIfMockCaptureDevicesEnabled = [weakThis = WeakPtr { *this }]() {
+        return weakThis && MockRealtimeMediaSourceCenter::mockRealtimeMediaSourceCenterEnabled();
+    };
+
+    return ThreadedSpeechRecognitionServer::create(*this, m_identifier, WTFMove(permissionChecker), WTFMove(checkIfMockCaptureDevicesEnabled));
+}
+#endif
 
 } // namespace WebKit

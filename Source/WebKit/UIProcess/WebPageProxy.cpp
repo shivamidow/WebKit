@@ -12413,6 +12413,16 @@ void WebPageProxy::setMockCaptureDevicesInterrupted(bool isCameraInterrupted, bo
 {
     send(Messages::WebPage::SetMockCaptureDevicesInterrupted(isCameraInterrupted, isMicrophoneInterrupted));
 }
+
+void WebPageProxy::requestSpeechRecognitionPermission(WebCore::SpeechRecognitionRequest& request, std::optional<WebCore::CaptureDevice>&& captureDevice, CompletionHandler<void(std::optional<SpeechRecognitionError>&&)>&& completionHandler)
+{
+    if (!m_speechRecognitionPermissionManager) {
+        m_speechRecognitionPermissionManager = makeUnique<SpeechRecognitionPermissionManager>(*this);
+        m_captureDevice = WTFMove(captureDevice);
+    }
+
+    m_speechRecognitionPermissionManager->request(request, WTFMove(completionHandler));
+}
 #endif
 
 #if ENABLE(TRACKING_PREVENTION)
@@ -12506,7 +12516,11 @@ void WebPageProxy::requestSpeechRecognitionPermissionByDefaultAction(const WebCo
 void WebPageProxy::requestUserMediaPermissionForSpeechRecognition(FrameIdentifier frameIdentifier, const WebCore::SecurityOrigin& requestingOrigin, const WebCore::SecurityOrigin& topOrigin, CompletionHandler<void(bool)>&& completionHandler)
 {
 #if ENABLE(MEDIA_STREAM)
+#if USE(GSTREAMER)
+    auto captureDevice = m_captureDevice;
+#else
     auto captureDevice = SpeechRecognitionCaptureSource::findCaptureDevice();
+#endif
     if (!captureDevice) {
         completionHandler(false);
         return;

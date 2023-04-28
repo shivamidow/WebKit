@@ -41,6 +41,7 @@
 #include "JSPlaneLayout.h"
 #include "OffscreenCanvas.h"
 #include "PixelBuffer.h"
+#include "SecurityOrigin.h"
 #include "SVGImageElement.h"
 #include "SecurityOrigin.h"
 #include "VideoColorSpace.h"

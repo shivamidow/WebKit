@@ -51,6 +51,8 @@ public:
     }
 
     void setSample(GRefPtr<GstSample>&& sample) { m_sample = WTFMove(sample); }
+    void setAudioInfo(const GstAudioInfo& info) { m_audioInfo = info; }
+
     const GRefPtr<GstSample>& getSample() const { return m_sample; }
     const GstAudioInfo& getAudioInfo() const { return m_audioInfo; }
     uint32_t channelCount() const { return GST_AUDIO_INFO_CHANNELS(&m_audioInfo); }

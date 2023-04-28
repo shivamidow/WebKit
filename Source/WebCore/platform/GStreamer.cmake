@@ -155,3 +155,16 @@ if (ENABLE_ENCRYPTED_MEDIA AND ENABLE_THUNDER)
         ${THUNDER_LIBRARIES}
     )
 endif ()
+
+if (USE_WHISPER)
+    list(APPEND WebCore_PRIVATE_INCLUDE_DIRECTORIES
+        "${WEBCORE_DIR}/Modules/speech/gstreamer"
+    )
+    list(APPEND WebCore_PRIVATE_FRAMEWORK_HEADERS
+        Modules/speech/gstreamer/GStreamerSpeechRecognizerTask.h
+        Modules/speech/gstreamer/GStreamerSpeechRecognizerTaskMock.h
+
+        platform/audio/gstreamer/AudioSampleDataSource.h
+        platform/audio/gstreamer/GStreamerAudioStreamDescription.h
+    )
+endif ()

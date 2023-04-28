@@ -28,6 +28,7 @@
 #include "APIObject.h"
 #include "MessageReceiver.h"
 #include "MessageSender.h"
+#include <WebCore/CaptureDevice.h>
 #include <wtf/CheckedRef.h>
 #include <wtf/CompletionHandler.h>
 #include <wtf/OptionSet.h>
@@ -84,7 +85,6 @@ enum class HysteresisState : bool;
 namespace WebCore {
 
 class AuthenticationChallenge;
-class CaptureDevice;
 class CertificateInfo;
 class Color;
 class ContentFilterUnblockHandler;
@@ -1998,6 +1998,7 @@ public:
 
 #if ENABLE(MEDIA_STREAM) && USE(GSTREAMER)
     void setMockCaptureDevicesInterrupted(bool isCameraInterrupted, bool isMicrophoneInterrupted);
+    void requestSpeechRecognitionPermission(WebCore::SpeechRecognitionRequest&, std::optional<WebCore::CaptureDevice>&&, SpeechRecognitionPermissionRequestCallback&&);
 #endif
 
     bool isHandlingPreventableTouchStart() const { return m_handlingPreventableTouchStartCount; }
@@ -3337,6 +3338,9 @@ private:
 
     RefPtr<WebPageProxy> m_pageToCloneSessionStorageFrom;
     Ref<BrowsingContextGroup> m_browsingContextGroup;
+#if ENABLE(MEDIA_STREAM) && USE(GSTREAMER)
+    std::optional<WebCore::CaptureDevice> m_captureDevice;
+#endif
 };
 
 } // namespace WebKit

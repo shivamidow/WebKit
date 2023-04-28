@@ -72,6 +72,12 @@ messages -> WebProcessProxy LegacyReceiver {
 
     CreateSpeechRecognitionServer(WebCore::PageIdentifier identifier)
     DestroySpeechRecognitionServer(WebCore::PageIdentifier identifier)
+#if USE(GSTREAMER)
+    RequestSpeechRecognitionPermission(WebCore::PageIdentifier identifier, WebCore::SpeechRecognitionRequestInfo requestInfo, std::optional<WebCore::CaptureDevice> captureDevice) -> (std::optional<WebCore::SpeechRecognitionError> error)
+#endif
+#if ENABLE(MEDIA_STREAM) && USE(GSTREAMER)
+    RequestToMuteCaptureInPagesExcept(WebCore::PageIdentifier identifier)
+#endif
 
     SystemBeep()
     
