@@ -4511,7 +4511,6 @@ imported/w3c/web-platform-tests/css/css-fonts/font-variant-position-04.html [ Im
 imported/w3c/web-platform-tests/css/css-fonts/font-variant-position-05.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/css/css-fonts/italic-oblique-fallback.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/css/css-fonts/separators.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/css/css-fonts/size-adjust-unicode-range-system-fallback.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/css/css-fonts/variation-sequences.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/css/css-fonts/downloadable-font-scoped-to-document.html
 

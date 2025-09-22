@@ -823,7 +823,12 @@ RefPtr<Font> FontCache::systemFallbackForCharacterCluster(const FontDescription&
     RefPtr<const FontCustomPlatformData> customPlatformData = nullptr;
     if (safeCFEqual(platformData.ctFont(), substituteFont))
         customPlatformData = platformData.customPlatformData();
-    FontPlatformData alternateFont(substituteFont, platformData.size(), syntheticBold, syntheticOblique, platformData.orientation(), platformData.widthVariant(), platformData.textRenderingMode(), customPlatformData.get());
+
+    // @font-face size-adjust does not affect fallback font sizes, but font-size-adjust does.
+    // We initialize FontPlatformData with the computed size, then apply font-size-adjust if required.
+    auto size = description.computedSize();
+    FontPlatformData alternateFont(substituteFont, size, syntheticBold, syntheticOblique, platformData.orientation(), platformData.widthVariant(), platformData.textRenderingMode(), customPlatformData.get());
+    alternateFont.updateSizeWithFontSizeAdjust(description.fontSizeAdjust(), size);
 
     return fontForPlatformData(alternateFont);
 }
