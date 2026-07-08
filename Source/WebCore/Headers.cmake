@@ -3344,6 +3344,7 @@ set(WebCore_PRIVATE_FRAMEWORK_HEADERS
 
     style/values/images/kinds/StyleImage.h
 
+    style/values/inline/StyleInitialLetter.h
     style/values/inline/StyleLineFitEdge.h
     style/values/inline/StyleLineHeight.h
     style/values/inline/StyleTextBoxEdge.h
