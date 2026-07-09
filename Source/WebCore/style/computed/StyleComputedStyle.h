@@ -163,6 +163,9 @@ public:
     // precedence when specified; otherwise the standard `initial-letter` is used.
     float usedInitialLetterHeight() const;
     float usedInitialLetterDrop() const;
+    // True when the effective initial letter comes from the standard `initial-letter` property
+    // (i.e. it is specified and the legacy `-webkit-initial-letter` is not).
+    bool usesStandardInitialLetter() const;
 
     inline TransformStyle3D usedTransformStyle3D() const;
     WebCore::Color usedScrollbarThumbColor() const;

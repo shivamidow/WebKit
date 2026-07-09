@@ -61,6 +61,10 @@ struct LineLayoutResult {
         InlineLayoutPoint initialLogicalTopLeft;
         InlineLayoutUnit intrusiveFloatsOffset { 0.f }; // Inherited floats from parent formatting context offseting line box.
         std::optional<InlineLayoutUnit> initialLetterClearGap { };
+        // The extra line that the standard initial-letter adds to the clear gap for a raised/sunken
+        // letter (see usesStandardInitialLetter()). It pushes content, but must be excluded from the
+        // initial letter float's text-box-trim adjustment so the float is not moved up an extra line.
+        InlineLayoutUnit initialLetterStandardExtraClearGap { 0.f };
     };
     LineGeometry lineGeometry { };
 

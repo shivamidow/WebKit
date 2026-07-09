@@ -826,7 +826,10 @@ InlineLayoutUnit LineBoxBuilder::applyTextBoxTrimOnLineBoxIfNeeded(InlineLayoutU
             rootInlineBox.setLogicalTop(rootInlineBox.logicalTop() - needToTrimThisMuch);
         };
         adjustRootInlineAndBottomAlignedBoxes();
-        m_lineLayoutResult.firstLineStartTrim = needToTrimThisMuch;
+        // The standard initial-letter's extra clear-gap line is a content-only push: excluding it here
+        // keeps the initial letter float from being moved up an additional line by the float's
+        // text-box-trim adjustment.
+        m_lineLayoutResult.firstLineStartTrim = needToTrimThisMuch - lineLayoutResult().lineGeometry.initialLetterStandardExtraClearGap;
     }
     return lineBoxLogicalHeight;
 }

@@ -369,7 +369,7 @@ LineLayoutResult LineBuilder::layoutInlineContent(const LineInput& lineInput, co
         , WTF::move(result.runs)
         , { WTF::move(m_placedFloats), WTF::move(m_suspendedFloats), m_lineIsConstrainedByFloat }
         , { contentLogicalLeft, result.contentLogicalWidth, contentLogicalLeft + result.contentLogicalRight, lineContent->overflowLogicalWidth }
-        , { m_lineLogicalRect.topLeft(), m_lineLogicalRect.width(), m_lineInitialLogicalRect.topLeft(), m_initialIntrusiveFloatsWidth, m_initialLetterClearGap }
+        , { m_lineLogicalRect.topLeft(), m_lineLogicalRect.width(), m_lineInitialLogicalRect.topLeft(), m_initialIntrusiveFloatsWidth, m_initialLetterClearGap, m_initialLetterStandardExtraClearGap }
         , { !result.isHangingTrailingContentWhitespace, result.hangingTrailingContentWidth, result.hangablePunctuationStartWidth }
         , { WTF::move(visualOrderList), inlineBaseDirection }
         , { isFirstFormattedLineCandidate && inlineContentEnding.has_value() ? IsFirstFormattedLine::Yes : IsFirstFormattedLine::No, isLastInlineContent }
@@ -442,6 +442,7 @@ void LineBuilder::initialize(const InlineRect& initialLineLogicalRect, const Inl
     m_overflowingLogicalWidth = { };
     m_partialLeadingTextItem = { };
     m_initialLetterClearGap = { };
+    m_initialLetterStandardExtraClearGap = { };
     m_candidateContentMaximumHeight = { };
     inlineContentBreaker().setHyphenationDisabled(layoutState().isHyphenationDisabled());
 
@@ -1271,6 +1272,14 @@ std::optional<LineBuilder::InitialLetterOffsets> LineBuilder::adjustLineRectForI
     if (drop < letterHeight) {
         // Sunken/raised initial letter pushes contents of the first line down.
         auto numberOfSunkenLines = letterHeight - drop;
+        // The standard `initial-letter` property pushes the paragraph content one additional
+        // line compared to the legacy -webkit-initial-letter (per CSS Inline Layout Module Level 3).
+        if (floatBox.style().usesStandardInitialLetter()) {
+            numberOfSunkenLines += 1;
+            // This extra line pushes content, but must not move the initial letter float an extra line
+            // when text-box-trim adjusts the float (see LineGeometry::initialLetterStandardExtraClearGap).
+            m_initialLetterStandardExtraClearGap = rootStyle().computedLineHeight();
+        }
         auto verticalGapForInlineContent = numberOfSunkenLines * rootStyle().computedLineHeight();
         clearGapBeforeFirstLine += verticalGapForInlineContent;
         // And we pull the initial letter up.
