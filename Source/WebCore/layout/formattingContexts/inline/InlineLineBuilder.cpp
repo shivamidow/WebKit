@@ -1295,12 +1295,9 @@ std::optional<LineBuilder::InitialLetterOffsets> LineBuilder::adjustLineRectForI
 
     auto clearGapBeforeFirstLine = InlineLayoutUnit { };
     if (intrusiveBottom) {
-        // When intrusive initial letter is cleared, we introduce a clear gap. This is (with proper floats) normally computed before starting
-        // line layout but intrusive initial letters are cleared only when another initial letter shows up. Regular inline content
-        // does not need clearance.
-        auto intrusiveInitialLetterWidth = std::max(0.f, m_lineLogicalRect.left() - m_lineInitialLogicalRect.left());
-        m_lineLogicalRect.setLeft(m_lineInitialLogicalRect.left());
-        m_lineLogicalRect.expandHorizontally(intrusiveInitialLetterWidth);
+        // Unlike proper floats, an intrusive initial letter is cleared only once another initial
+        // letter appears, so the gap is computed here. The line must not widen: this block's own
+        // initial letter needs its horizontal inset on the first line.
         clearGapBeforeFirstLine = *intrusiveBottom;
     }
 
