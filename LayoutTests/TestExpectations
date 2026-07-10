@@ -6999,7 +6999,6 @@ imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-ind
 imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-layout-text-decoration-underline.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-raise-initial-vlr.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-raise-initial-vrl.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-short-para-initial-letter-clears.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-short-para-initial-letter-wraps.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-sunk-initial-vlr.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-sunk-initial-vrl.html [ ImageOnlyFailure ]
