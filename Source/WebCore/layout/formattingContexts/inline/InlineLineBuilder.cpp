@@ -1345,6 +1345,9 @@ bool LineBuilder::tryPlacingFloatBox(const Box& floatBox, MayOverConstrainLine m
     if (!shouldTryToPlaceFloatBox(floatBox, boxGeometry.marginBoxWidth(), mayOverConstrainLine))
         return false;
 
+    // Unlike regular floats, an initial letter is affected by text-indent: the indent is applied to
+    // the initial letter itself (not to the text beside it).
+    auto isInitialLetter = floatBox.style().pseudoElementType() == PseudoElementType::FirstLetter && floatBox.style().usedInitialLetterDrop() > 0;
     auto lineMarginBoxLeft = std::max(0.f, m_lineLogicalRect.left() - m_lineMarginStart);
     auto computeFloatBoxPosition = [&] {
         // Set static position first.
@@ -1353,6 +1356,11 @@ bool LineBuilder::tryPlacingFloatBox(const Box& floatBox, MayOverConstrainLine m
             staticPosition.setY(m_lineLogicalRect.top() + additionalOffsets->capHeightOffset);
             boxGeometry.setVerticalMargin({ boxGeometry.marginBefore() + additionalOffsets->sunkenBelowFirstLineOffset, boxGeometry.marginAfter() });
         }
+        // Indent the initial letter by text-indent relative to the (already text-indented) line
+        // content start. Model this as an extra start margin so float positioning honors it in both
+        // writing directions.
+        if (isInitialLetter && m_lineMarginStart)
+            boxGeometry.setMarginStart(boxGeometry.marginStart() + LayoutUnit { 2 * m_lineMarginStart });
         staticPosition.move(boxGeometry.marginStart(), boxGeometry.marginBefore());
         boxGeometry.setTopLeft(staticPosition);
         // Compute float position by running float layout.
@@ -1401,7 +1409,10 @@ bool LineBuilder::tryPlacingFloatBox(const Box& floatBox, MayOverConstrainLine m
             // This float is placed outside the line box. No need to shrink the current line.
             return;
         }
-        auto constraints = floatAvoidingRect(m_lineLogicalRect, m_lineMarginStart);
+        // The initial letter has consumed the text-indent (applied as its start margin above), so the
+        // text beside it must not be indented again.
+        auto lineMarginStart = isInitialLetter ? InlineLayoutUnit { } : m_lineMarginStart;
+        auto constraints = floatAvoidingRect(m_lineLogicalRect, lineMarginStart);
         m_lineLogicalRect = constraints.logicalRect;
         m_lineIsConstrainedByFloat.add(constraints.constrainedSideSet);
     };
