@@ -1373,6 +1373,8 @@ bool LineBuilder::tryPlacingFloatBox(const Box& floatBox, MayOverConstrainLine m
     if (!shouldTryToPlaceFloatBox(floatBox, boxGeometry.marginBoxWidth(), mayOverConstrainLine))
         return false;
 
+    // Unlike regular floats, text-indent applies to the letter itself, not the text beside it.
+    auto isInitialLetter = floatBox.style().pseudoElementType() == PseudoElementType::FirstLetter && floatBox.style().usedInitialLetterDrop() > 0;
     auto lineMarginBoxLeft = std::max(0.f, m_lineLogicalRect.left() - m_lineMarginStart);
     auto computeFloatBoxPosition = [&] {
         // Set static position first.
@@ -1381,6 +1383,9 @@ bool LineBuilder::tryPlacingFloatBox(const Box& floatBox, MayOverConstrainLine m
             staticPosition.setY(m_lineLogicalRect.top() + additionalOffsets->capHeightOffset);
             boxGeometry.setVerticalMargin({ boxGeometry.marginBefore() + additionalOffsets->sunkenBelowFirstLineOffset, boxGeometry.marginAfter() });
         }
+        // Modeled as a start margin so float positioning honors it in both directions.
+        if (isInitialLetter && m_lineMarginStart)
+            boxGeometry.setMarginStart(boxGeometry.marginStart() + LayoutUnit { 2 * m_lineMarginStart });
         staticPosition.move(boxGeometry.marginStart(), boxGeometry.marginBefore());
         boxGeometry.setTopLeft(staticPosition);
         // Compute float position by running float layout.
@@ -1429,7 +1434,9 @@ bool LineBuilder::tryPlacingFloatBox(const Box& floatBox, MayOverConstrainLine m
             // This float is placed outside the line box. No need to shrink the current line.
             return;
         }
-        auto constraints = floatAvoidingRect(m_lineLogicalRect, m_lineMarginStart);
+        // The letter consumed the indent as its start margin; do not indent the text again.
+        auto lineMarginStart = isInitialLetter ? InlineLayoutUnit { } : m_lineMarginStart;
+        auto constraints = floatAvoidingRect(m_lineLogicalRect, lineMarginStart);
         m_lineLogicalRect = constraints.logicalRect;
         m_lineIsConstrainedByFloat.add(constraints.constrainedSideSet);
     };
