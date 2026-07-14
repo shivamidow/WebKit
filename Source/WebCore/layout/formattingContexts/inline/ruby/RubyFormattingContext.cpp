@@ -568,6 +568,11 @@ bool RubyFormattingContext::hasInterlinearAnnotation(const Box& rubyBaseLayoutBo
     return rubyBaseLayoutBox.associatedRubyAnnotationBox() && !hasInterCharacterAnnotation(rubyBaseLayoutBox);
 }
 
+bool RubyFormattingContext::hasInterlinearAnnotationBefore(const Box& rubyBaseLayoutBox)
+{
+    return hasInterlinearAnnotation(rubyBaseLayoutBox) && rubyPosition(rubyBaseLayoutBox) == RubyPosition::Over;
+}
+
 bool RubyFormattingContext::hasInterCharacterAnnotation(const Box& rubyBaseLayoutBox)
 {
     ASSERT(rubyBaseLayoutBox.isRubyBase());

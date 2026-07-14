@@ -33,6 +33,7 @@
 #include "LayoutBoxGeometry.h"
 #include "LayoutBoxInlines.h"
 #include "LayoutElementBox.h"
+#include "RubyFormattingContext.h"
 #include "StyleComputedStyle+GettersInlines.h"
 
 namespace WebCore {
@@ -129,6 +130,44 @@ std::optional<LayoutUnit> InlineQuirks::initialLetterAlignmentOffset(const Box& 
     auto& floatBoxGeometry = formattingContext().geometryForBox(floatBox);
     auto fontHeight = primaryFontMetrics.ascent() + primaryFontMetrics.descent();
     return LayoutUnit { primaryFontMetrics.ascent(FontBaseline::Alphabetic) + (lineHeight() - fontHeight) / 2 - primaryFontMetrics.capHeight().value_or(0.f) - floatBoxGeometry.marginBorderAndPaddingBefore() };
+}
+
+std::optional<LayoutUnit> InlineQuirks::initialLetterAnnotationOffset(const LineBox& lineBox, const Box& floatBox, const Style::ComputedStyle& lineBoxStyle, InlineLayoutUnit rootInlineBoxTrimShift) const
+{
+    ASSERT(floatBox.isFloatingPositioned());
+    if (!floatBox.style().lineBoxContain().contains(Style::WebkitLineBoxContainValue::InitialLetter))
+        return { };
+
+    // Only an over annotation displaces the root inline box. Without one there is nothing to
+    // compensate for, and the residue of the computation below is not necessarily zero because the
+    // initial letter itself participates in line box sizing.
+    auto lineHasAnnotationBefore = [&] {
+        for (auto& inlineLevelBox : lineBox.nonRootInlineLevelBoxes()) {
+            if (!inlineLevelBox.isInlineBox())
+                continue;
+
+            CheckedRef rubyBaseLayoutBox = inlineLevelBox.layoutBox();
+            if (rubyBaseLayoutBox->isRubyBase() && RubyFormattingContext::hasInterlinearAnnotationBefore(rubyBaseLayoutBox))
+                return true;
+        }
+        return false;
+    };
+    if (!lineHasAnnotationBefore())
+        return { };
+
+    // Over-annotations push the root inline box below where initialLetterAlignmentOffset() placed
+    // the letter; return the difference so the letter tracks the base content.
+    auto& primaryFontMetrics = lineBoxStyle.fontCascade().metricsOfPrimaryFont();
+    auto lineHeight = [&] -> InlineLayoutUnit {
+        if (lineBoxStyle.lineHeight().isNormal())
+            return primaryFontMetrics.ascent(FontBaseline::Alphabetic) + primaryFontMetrics.descent(FontBaseline::Alphabetic);
+        return lineBoxStyle.usedLineHeight();
+    };
+    auto fontHeight = primaryFontMetrics.ascent() + primaryFontMetrics.descent();
+    auto halfLeading = (lineHeight() - fontHeight) / 2;
+    // Add back the trim shift so this measures the annotation ascent alone.
+    auto rootInlineBoxTop = lineBox.logicalRectForRootInlineBox().top() + rootInlineBoxTrimShift;
+    return LayoutUnit { rootInlineBoxTop - halfLeading };
 }
 
 std::optional<InlineRect> InlineQuirks::adjustedRectForLineGridLineAlign(const InlineRect& rect) const

@@ -62,6 +62,7 @@ public:
 
     // Miscellaneous helpers
     static bool LEGACY_NODELETE hasInterlinearAnnotation(const Box& rubyBaseLayoutBox);
+    static bool LEGACY_NODELETE hasInterlinearAnnotationBefore(const Box& rubyBaseLayoutBox);
     static bool LEGACY_NODELETE hasInterCharacterAnnotation(const Box& rubyBaseLayoutBox);
 
 private:

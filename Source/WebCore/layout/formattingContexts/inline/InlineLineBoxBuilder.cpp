@@ -650,8 +650,8 @@ void LineBoxBuilder::adjustInlineBoxHeightsForLineBoxContainIfApplicable(LineBox
         auto initialLetterAscent = fontMetrics.capHeight().value_or(0.f);
         auto initialLetterDescent = InlineLayoutUnit { };
 
+        // Bidi may split the letter into several runs, so enclose all of them.
         for (auto run : lineLayoutResult().runs) {
-            // We really should only have one text run for initial letter.
             if (!run.isText())
                 continue;
 
@@ -660,10 +660,9 @@ void LineBoxBuilder::adjustInlineBoxHeightsForLineBoxContainIfApplicable(LineBox
             CheckedRef style = isFirstFormattedLine() ? textBox->firstLineStyle() : textBox->style();
             auto ascentAndDescent = TextUtil::enclosingGlyphBoundsForText(StringView(textBox->content()).substring(textContent.start, textContent.length), style, textBox->shouldUseSimpleGlyphOverflowCodePath() ? TextUtil::ShouldUseSimpleGlyphOverflowCodePath::Yes : TextUtil::ShouldUseSimpleGlyphOverflowCodePath::No);
 
-            initialLetterDescent = ascentAndDescent.descent;
+            initialLetterDescent = std::max(initialLetterDescent, ascentAndDescent.descent);
             if (lineBox.baselineType() != FontBaseline::Alphabetic)
-                initialLetterAscent = -ascentAndDescent.ascent;
-            break;
+                initialLetterAscent = std::max(initialLetterAscent, -ascentAndDescent.ascent);
         }
         inlineBoxBoundsMap.set(&rootInlineBox, TextUtil::EnclosingAscentDescent { initialLetterAscent, initialLetterDescent });
     }
