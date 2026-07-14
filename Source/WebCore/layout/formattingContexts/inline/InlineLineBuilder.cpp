@@ -376,8 +376,9 @@ LineLayoutResult LineBuilder::layoutInlineContent(const LineInput& lineInput, co
         , { WTF::move(lineContent->rubyBaseAlignmentOffsetList), lineContent->rubyAnnotationOffset }
         , inlineContentEnding
         , result.nonSpanningInlineLevelBoxCount
-        , { }
-        , { }
+        , { } // trimmedTrailingWhitespaceWidth
+        , { } // firstLineStartTrim
+        , { } // firstLineRootInlineBoxTrimShift
         , lineContent->range.isEmpty() ? std::make_optional(m_lineLogicalRect.top() + m_candidateContentMaximumHeight) : std::nullopt
     };
 }

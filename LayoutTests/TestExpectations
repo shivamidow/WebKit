@@ -6971,9 +6971,7 @@ imported/w3c/web-platform-tests/css/compositing/mix-blend-mode/mix-blend-mode-st
 # webkit.org/b/261464 - Import WPT css/css-inline
 
 imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-block-position-drop-over-ruby-tall.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-block-position-drop-over-ruby.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-block-position-drop-under-ruby-tall.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-block-position-drop-under-ruby.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-block-position-margins-rtl.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-block-position-margins-vlr.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-block-position-margins-vrl.html [ ImageOnlyFailure ]
@@ -7000,7 +6998,6 @@ imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-rai
 imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-short-para-initial-letter-wraps.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-sunk-initial-vlr.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-sunk-initial-vrl.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-sunk-initial.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/css/css-inline/baseline-source/baseline-source-first-002.html [ Pass Failure ]
 imported/w3c/web-platform-tests/css/css-inline/baseline-source/baseline-source-first-003.html [ Pass Failure ]
 imported/w3c/web-platform-tests/css/css-inline/baseline-source/baseline-source-last-002.html [ Pass Failure ]

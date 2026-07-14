@@ -640,8 +640,9 @@ void LineBoxBuilder::adjustInlineBoxHeightsForLineBoxContainIfApplicable(LineBox
         auto initialLetterAscent = fontMetrics.capHeight().value_or(0.f);
         auto initialLetterDescent = InlineLayoutUnit { };
 
+        // Bidi (e.g. RTL) may split the initial letter into multiple runs (such as a leading tab
+        // followed by the letter), so enclose all of them rather than assuming a single run.
         for (auto run : lineLayoutResult().runs) {
-            // We really should only have one text run for initial letter.
             if (!run.isText())
                 continue;
 
@@ -650,10 +651,9 @@ void LineBoxBuilder::adjustInlineBoxHeightsForLineBoxContainIfApplicable(LineBox
             auto& style = isFirstFormattedLine() ? textBox.firstLineStyle() : textBox.style();
             auto ascentAndDescent = TextUtil::enclosingGlyphBoundsForText(StringView(textBox.content()).substring(textContent.start, textContent.length), style, textBox.shouldUseSimpleGlyphOverflowCodePath() ? TextUtil::ShouldUseSimpleGlyphOverflowCodePath::Yes : TextUtil::ShouldUseSimpleGlyphOverflowCodePath::No);
 
-            initialLetterDescent = ascentAndDescent.descent;
+            initialLetterDescent = std::max(initialLetterDescent, ascentAndDescent.descent);
             if (lineBox.baselineType() != FontBaseline::Alphabetic)
-                initialLetterAscent = -ascentAndDescent.ascent;
-            break;
+                initialLetterAscent = std::max(initialLetterAscent, -ascentAndDescent.ascent);
         }
         inlineBoxBoundsMap.set(&rootInlineBox, TextUtil::EnclosingAscentDescent { initialLetterAscent, initialLetterDescent });
     }
@@ -826,6 +826,9 @@ InlineLayoutUnit LineBoxBuilder::applyTextBoxTrimOnLineBoxIfNeeded(InlineLayoutU
             rootInlineBox.setLogicalTop(rootInlineBox.logicalTop() - needToTrimThisMuch);
         };
         adjustRootInlineAndBottomAlignedBoxes();
+        // The root inline box (and content) is trimmed by the full amount; record it so the initial
+        // letter's over-annotation offset can undo this shift.
+        m_lineLayoutResult.firstLineRootInlineBoxTrimShift = needToTrimThisMuch;
         // The standard initial-letter's extra clear-gap line is a content-only push: excluding it here
         // keeps the initial letter float from being moved up an additional line by the float's
         // text-box-trim adjustment.
