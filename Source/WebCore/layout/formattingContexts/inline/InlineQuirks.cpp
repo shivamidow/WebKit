@@ -120,8 +120,11 @@ std::optional<LayoutUnit> InlineQuirks::initialLetterAlignmentOffset(const Box& 
         return lineBoxStyle.computedLineHeight();
     };
     auto& floatBoxGeometry = formattingContext().geometryForBox(floatBox);
-    auto fontHeight = primaryFontMetrics.ascent() + primaryFontMetrics.descent();
-    return LayoutUnit { primaryFontMetrics.ascent(FontBaseline::Alphabetic) + (lineHeight() - fontHeight) / 2 - primaryFontMetrics.capHeight().value_or(0.f) - floatBoxGeometry.marginBorderAndPaddingBefore() };
+    auto fontHeight = InlineFormattingUtils::snapToInt(primaryFontMetrics.ascent(), floatBox) + InlineFormattingUtils::snapToInt(primaryFontMetrics.descent(), floatBox);
+    // Subtract only border+padding (not margin): the offset aligns the letter's cap below its own
+    // border/padding, while the margin-before is applied separately when the float is positioned.
+    // Subtracting the margin here would cancel that and drop margin-top on the floor.
+    return LayoutUnit { InlineFormattingUtils::ascent(primaryFontMetrics, FontBaseline::Alphabetic, floatBox) + (lineHeight() - fontHeight) / 2 - InlineFormattingUtils::snapToInt(primaryFontMetrics.capHeight().value_or(0.f), floatBox) - floatBoxGeometry.borderAndPaddingBefore() };
 }
 
 std::optional<LayoutUnit> InlineQuirks::initialLetterAnnotationOffset(const LineBox& lineBox, const Box& floatBox, const Style::ComputedStyle& lineBoxStyle, InlineLayoutUnit rootInlineBoxTrimShift) const
