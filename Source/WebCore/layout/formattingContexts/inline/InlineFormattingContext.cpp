@@ -445,8 +445,11 @@ void InlineFormattingContext::updateBoxGeometryForPlacedFloats(const LineLayoutR
         // the first line's over-annotation ascent so it tracks the base content.
         auto isInitialLetter = floatBox->style().pseudoElementType() == PseudoElementType::FirstLetter && floatBox->style().usedInitialLetterDrop() > 0;
         if (isInitialLetter) {
-            if (auto annotationOffset = quirks().initialLetterAnnotationOffset(lineBox, floatBox, root().style(), rootInlineBoxTrimShift))
+            if (auto annotationOffset = quirks().initialLetterAnnotationOffset(lineBox, floatBox, root().style(), rootInlineBoxTrimShift)) {
                 borderBoxTopLeft.setY(borderBoxTopLeft.y() + *annotationOffset);
+                // Move the exclusion too, so subsequent lines wrap against the final position.
+                layoutState().placedFloats().moveFloatVertically(floatBox, *annotationOffset);
+            }
         }
         boxGeometry.setTopLeft(borderBoxTopLeft);
         // Adopt trimmed inline direction margin.
