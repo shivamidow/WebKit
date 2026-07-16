@@ -432,8 +432,12 @@ void InlineFormattingContext::updateBoxGeometryForPlacedFloats(const LineLayoutR
         // over ruby) so it tracks the base content.
         auto isInitialLetter = floatBox->style().pseudoElementType() == PseudoElementType::FirstLetter && floatBox->style().usedInitialLetterDrop() > 0;
         if (isInitialLetter) {
-            if (auto annotationOffset = quirks().initialLetterAnnotationOffset(lineBox, floatBox, root().style(), rootInlineBoxTrimShift))
+            if (auto annotationOffset = quirks().initialLetterAnnotationOffset(lineBox, floatBox, root().style(), rootInlineBoxTrimShift)) {
                 borderBoxTopLeft.setY(borderBoxTopLeft.y() + *annotationOffset);
+                // The float was placed (and later lines wrapped) before this offset was known. Shift the
+                // float's exclusion by the same amount so subsequent lines wrap against its final position.
+                layoutState().placedFloats().moveFloatVertically(floatBox, *annotationOffset);
+            }
         }
         boxGeometry.setTopLeft(borderBoxTopLeft);
         // Adopt trimmed inline direction margin.
