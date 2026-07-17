@@ -654,6 +654,8 @@ void LineBoxBuilder::adjustInlineBoxHeightsForLineBoxContainIfApplicable(LineBox
         auto initialLetterDescent = InlineLayoutUnit { };
 
         // Bidi may split the letter into several runs, so enclose all of them.
+        auto glyphInkAscent = InlineLayoutUnit { };
+        auto glyphInkDescent = InlineLayoutUnit { };
         for (auto run : lineLayoutResult().runs) {
             if (!run.isText())
                 continue;
@@ -663,9 +665,15 @@ void LineBoxBuilder::adjustInlineBoxHeightsForLineBoxContainIfApplicable(LineBox
             CheckedRef style = isFirstFormattedLine() ? textBox->firstLineStyle() : textBox->style();
             auto ascentAndDescent = TextUtil::enclosingGlyphBoundsForText(StringView(textBox->content()).substring(textContent.start, textContent.length), style, textBox->shouldUseSimpleGlyphOverflowCodePath() ? TextUtil::ShouldUseSimpleGlyphOverflowCodePath::Yes : TextUtil::ShouldUseSimpleGlyphOverflowCodePath::No);
 
-            initialLetterDescent = std::max(initialLetterDescent, ascentAndDescent.descent);
-            if (lineBox.baselineType() != FontBaseline::Alphabetic)
-                initialLetterAscent = std::max(initialLetterAscent, -ascentAndDescent.ascent);
+            glyphInkAscent = std::max(glyphInkAscent, -ascentAndDescent.ascent);
+            glyphInkDescent = std::max(glyphInkDescent, ascentAndDescent.descent);
+        }
+        initialLetterDescent = glyphInkDescent;
+        if (lineBox.baselineType() != FontBaseline::Alphabetic) {
+            // Centered on the central baseline here, so split the ink box symmetrically.
+            auto half = (glyphInkAscent + glyphInkDescent) / 2;
+            initialLetterAscent = half;
+            initialLetterDescent = half;
         }
         inlineBoxBoundsMap.set(&rootInlineBox, TextUtil::EnclosingAscentDescent { initialLetterAscent, initialLetterDescent });
     }
