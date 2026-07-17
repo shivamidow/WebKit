@@ -6972,10 +6972,6 @@ imported/w3c/web-platform-tests/css/compositing/mix-blend-mode/mix-blend-mode-st
 
 imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-block-position-margins-vlr.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-block-position-margins-vrl.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-block-position-raise-over-ruby-tall.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-block-position-raise-over-ruby.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-block-position-raise-under-ruby-tall.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-block-position-raise-under-ruby.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/css/css-inline/initial-letter/Initial-letter-breaking-vlr.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/css/css-inline/initial-letter/Initial-letter-breaking-vrl.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-drop-initial-vlr.html [ ImageOnlyFailure ]

@@ -80,8 +80,12 @@ LineBox LineBoxBuilder::build(size_t lineIndex)
                 inlineBox.setLogicalHeight({ });
             }
         }
-        if (m_lineHasNonLineSpanningRubyContent)
-            RubyFormattingContext::applyAnnotationContributionToLayoutBounds(lineBox, formattingContext(), lineLayoutResult.isFirstLast.isLastLineWithInlineContent);
+        if (m_lineHasNonLineSpanningRubyContent) {
+            // A raised initial letter reserves clear-gap space above the first line; an over annotation is
+            // absorbed into it instead of stretching the line (see adjustLayoutBoundsAndStretchAncestorRubyBase).
+            auto spaceAboveFirstLine = lineLayoutResult.lineGeometry.initialLetterClearGap.value_or(0_lu);
+            RubyFormattingContext::applyAnnotationContributionToLayoutBounds(lineBox, formattingContext(), lineLayoutResult.isFirstLast.isLastLineWithInlineContent, spaceAboveFirstLine);
+        }
         computeLineBoxGeometry(lineBox);
         adjustOutsideListMarkersPosition(lineBox);
 
