@@ -268,6 +268,15 @@ LayoutPoint FloatingContext::positionForFloat(const Box& layoutBox, const BoxGeo
     if (!isInitialLetter && blockStartCandidate - boxGeometry.marginBefore() < lastOrClearedFloatPosition)
         blockStartCandidate = lastOrClearedFloatPosition + boxGeometry.marginBefore();
 
+    // Same-side floats clear an initial letter even without an explicit clear.
+    if (!isInitialLetter && isFloatingCandidateStartPositionedInBlockFormattingContext(layoutBox)) {
+        for (auto& floatItem : placedFloats().list()) {
+            CheckedPtr initialLetterFloatBox = floatItem.layoutBox();
+            if (initialLetterFloatBox && initialLetterFloatBox->style().lineBoxContain().contains(Style::WebkitLineBoxContainValue::InitialLetter))
+                blockStartCandidate = std::max(blockStartCandidate, floatItem.absoluteRectWithMargin().bottom() + boxGeometry.marginBefore());
+        }
+    }
+
     absoluteTopLeft.setY(blockStartCandidate);
     auto margins = BoxGeometry::Edges { { boxGeometry.marginStart(), boxGeometry.marginEnd() }, { boxGeometry.marginBefore(), boxGeometry.marginAfter() } };
     auto floatBox = FloatAvoider { absoluteTopLeft, boxGeometry.borderBoxWidth(), margins, absoluteCoordinates.containingBlockContentBox, true, isFloatingCandidateStartPositionedInBlockFormattingContext(layoutBox) };
