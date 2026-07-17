@@ -120,11 +120,19 @@ std::optional<LayoutUnit> InlineQuirks::initialLetterAlignmentOffset(const Box& 
         return lineBoxStyle.computedLineHeight();
     };
     auto& floatBoxGeometry = formattingContext().geometryForBox(floatBox);
-    auto fontHeight = InlineFormattingUtils::snapToInt(primaryFontMetrics.ascent(), floatBox) + InlineFormattingUtils::snapToInt(primaryFontMetrics.descent(), floatBox);
+    auto fontHeight = primaryFontMetrics.ascent() + primaryFontMetrics.descent();
     // Subtract only border+padding (not margin): the offset aligns the letter's cap below its own
     // border/padding, while the margin-before is applied separately when the float is positioned.
     // Subtracting the margin here would cancel that and drop margin-top on the floor.
-    return LayoutUnit { InlineFormattingUtils::ascent(primaryFontMetrics, FontBaseline::Alphabetic, floatBox) + (lineHeight() - fontHeight) / 2 - InlineFormattingUtils::snapToInt(primaryFontMetrics.capHeight().value_or(0.f), floatBox) - floatBoxGeometry.borderAndPaddingBefore() };
+    auto alignmentOffset = primaryFontMetrics.ascent(FontBaseline::Alphabetic) + (lineHeight() - fontHeight) / 2 - primaryFontMetrics.capHeight().value_or(0.f) - floatBoxGeometry.borderAndPaddingBefore();
+    // In vertical typographic modes the base glyphs are centered on the central (ideographic) baseline
+    // rather than sitting on the alphabetic baseline, so align the initial letter there too by shifting
+    // the cap-alignment offset by the alphabetic-to-central baseline delta.
+    if (lineBoxStyle.writingMode().isVerticalTypographic()) {
+        alignmentOffset += primaryFontMetrics.ascent(FontBaseline::Alphabetic)
+            - primaryFontMetrics.ascent(FontBaseline::Ideographic);
+    }
+    return LayoutUnit { alignmentOffset };
 }
 
 std::optional<LayoutUnit> InlineQuirks::initialLetterAnnotationOffset(const LineBox& lineBox, const Box& floatBox, const Style::ComputedStyle& lineBoxStyle, InlineLayoutUnit rootInlineBoxTrimShift) const

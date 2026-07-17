@@ -646,6 +646,8 @@ void LineBoxBuilder::adjustInlineBoxHeightsForLineBoxContainIfApplicable(LineBox
 
         // Bidi (e.g. RTL) may split the initial letter into multiple runs (such as a leading tab
         // followed by the letter), so enclose all of them rather than assuming a single run.
+        auto glyphInkAscent = InlineLayoutUnit { };
+        auto glyphInkDescent = InlineLayoutUnit { };
         for (auto run : lineLayoutResult().runs) {
             if (!run.isText())
                 continue;
@@ -655,9 +657,16 @@ void LineBoxBuilder::adjustInlineBoxHeightsForLineBoxContainIfApplicable(LineBox
             auto& style = isFirstFormattedLine() ? textBox.firstLineStyle() : textBox.style();
             auto ascentAndDescent = TextUtil::enclosingGlyphBoundsForText(StringView(textBox.content()).substring(textContent.start, textContent.length), style, textBox.shouldUseSimpleGlyphOverflowCodePath() ? TextUtil::ShouldUseSimpleGlyphOverflowCodePath::Yes : TextUtil::ShouldUseSimpleGlyphOverflowCodePath::No);
 
-            initialLetterDescent = std::max(initialLetterDescent, ascentAndDescent.descent);
-            if (lineBox.baselineType() != FontBaseline::Alphabetic)
-                initialLetterAscent = std::max(initialLetterAscent, -ascentAndDescent.ascent);
+            glyphInkAscent = std::max(glyphInkAscent, -ascentAndDescent.ascent);
+            glyphInkDescent = std::max(glyphInkDescent, ascentAndDescent.descent);
+        }
+        initialLetterDescent = glyphInkDescent;
+        if (lineBox.baselineType() != FontBaseline::Alphabetic) {
+            // In vertical typographic modes the initial letter is centered on the central (ideographic)
+            // baseline, so split its ink box symmetrically rather than hanging it from the alphabetic cap.
+            auto half = (glyphInkAscent + glyphInkDescent) / 2;
+            initialLetterAscent = half;
+            initialLetterDescent = half;
         }
         inlineBoxBoundsMap.set(&rootInlineBox, TextUtil::EnclosingAscentDescent { initialLetterAscent, initialLetterDescent });
     }
