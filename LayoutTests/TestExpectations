@@ -6970,7 +6970,6 @@ imported/w3c/web-platform-tests/css/compositing/mix-blend-mode/mix-blend-mode-st
 
 # webkit.org/b/261464 - Import WPT css/css-inline
 
-imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-float-004.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-float-005.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/css/css-inline/baseline-source/baseline-source-first-002.html [ Pass Failure ]
 imported/w3c/web-platform-tests/css/css-inline/baseline-source/baseline-source-first-003.html [ Pass Failure ]
