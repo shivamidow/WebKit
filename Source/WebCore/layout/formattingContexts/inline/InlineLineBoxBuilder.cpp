@@ -81,7 +81,7 @@ LineBox LineBoxBuilder::build(size_t lineIndex)
             }
         }
         if (m_lineHasNonLineSpanningRubyContent)
-            RubyFormattingContext::applyAnnotationContributionToLayoutBounds(lineBox, formattingContext());
+            RubyFormattingContext::applyAnnotationContributionToLayoutBounds(lineBox, formattingContext(), lineLayoutResult.isFirstLast.isLastLineWithInlineContent);
         if (isFirstFormattedLine())
             stretchRootInlineBoxForExcludedMarkers(lineBox);
         computeLineBoxGeometry(lineBox);

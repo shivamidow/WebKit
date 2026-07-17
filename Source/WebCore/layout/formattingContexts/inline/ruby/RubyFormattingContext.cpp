@@ -360,7 +360,7 @@ InlineLayoutSize RubyFormattingContext::sizeAnnotationBox(const Box& rubyBaseLay
     return annotationBoxLogicalGeometry.contentBoxSize();
 }
 
-void RubyFormattingContext::adjustLayoutBoundsAndStretchAncestorRubyBase(LineBox& lineBox, InlineLevelBox& rubyBaseInlineBox, MaximumLayoutBoundsStretchMap& descendantRubySet, const InlineFormattingContext& inlineFormattingContext)
+void RubyFormattingContext::adjustLayoutBoundsAndStretchAncestorRubyBase(LineBox& lineBox, InlineLevelBox& rubyBaseInlineBox, MaximumLayoutBoundsStretchMap& descendantRubySet, const InlineFormattingContext& inlineFormattingContext, bool isLastLine)
 {
     CheckedRef rubyBaseLayoutBox = rubyBaseInlineBox.layoutBox();
     ASSERT(rubyBaseLayoutBox->isRubyBase());
@@ -425,7 +425,11 @@ void RubyFormattingContext::adjustLayoutBoundsAndStretchAncestorRubyBase(LineBox
         // only checking against total height (this affects the annotation box vertical placement by letting it overlap the previous line's descent)
         // However we have to make sure there's enough space for the annotation box on the first line.
         // This tight content arrangement is a legacy ruby behavior (see placeChildInlineBoxesInBlockDirection) and we may wanna reconsider it at some point.
-        if (isFirstFormattedLine) {
+        // An annotation leaks into an adjacent line's half-leading, so it only has to be reserved in
+        // full when there is no such line: an over annotation leaks upwards, an under annotation
+        // downwards, and the latter therefore also needs its line to be the last one.
+        auto mustFullyReserveAnnotation = isFirstFormattedLine && (isAnnotationBefore || isLastLine);
+        if (mustFullyReserveAnnotation) {
             layoutBounds.ascent = std::max(ascentWithAnnotation, layoutBounds.ascent);
             layoutBounds.descent = std::max(descentWithAnnotation, layoutBounds.descent);
         } else if (layoutBounds.height() < ascentWithAnnotation + descentWithAnnotation) {
@@ -444,7 +448,7 @@ void RubyFormattingContext::adjustLayoutBoundsAndStretchAncestorRubyBase(LineBox
     stretchAncestorRubyBaseIfApplicable(layoutBounds);
 }
 
-void RubyFormattingContext::applyAnnotationContributionToLayoutBounds(LineBox& lineBox, const InlineFormattingContext& inlineFormattingContext)
+void RubyFormattingContext::applyAnnotationContributionToLayoutBounds(LineBox& lineBox, const InlineFormattingContext& inlineFormattingContext, bool isLastLine)
 {
     // In order to ensure consistent spacing of lines, documents with ruby typically ensure that the line-height is
     // large enough to accommodate ruby between lines of text. Therefore, ordinarily, ruby annotation containers and ruby annotation
@@ -456,7 +460,7 @@ void RubyFormattingContext::applyAnnotationContributionToLayoutBounds(LineBox& l
     for (auto& inlineLevelBox : lineBox.nonRootInlineLevelBoxes() | std::views::reverse) {
         if (!inlineLevelBox.isInlineBox() || !inlineLevelBox.layoutBox().isRubyBase())
             continue;
-        adjustLayoutBoundsAndStretchAncestorRubyBase(lineBox, inlineLevelBox, descentRubySet, inlineFormattingContext);
+        adjustLayoutBoundsAndStretchAncestorRubyBase(lineBox, inlineLevelBox, descentRubySet, inlineFormattingContext, isLastLine);
     }
 }
 
