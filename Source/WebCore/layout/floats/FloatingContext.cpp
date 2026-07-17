@@ -243,18 +243,24 @@ LayoutPoint FloatingContext::positionForFloat(const Box& layoutBox, const BoxGeo
     auto clearPosition = [&]() -> std::optional<LayoutUnit> {
         if (!layoutBox.hasFloatClear())
             return { };
-        // The vertical position candidate needs to clear the existing floats in this context.
-        switch (clearInBlockFormattingContext(layoutBox)) {
-        case Clear::Left:
-            return placedFloats().lowestPositionOnBlockAxis(Clear::InlineStart);
-        case Clear::Right:
-            return placedFloats().lowestPositionOnBlockAxis(Clear::InlineEnd);
-        case Clear::Both:
-            return placedFloats().lowestPositionOnBlockAxis();
-        default:
-            ASSERT_NOT_REACHED();
+        // The vertical position candidate needs to clear the existing floats in this context. An initial
+        // letter is not subject to the clear property (only same-side floats clear it, handled separately),
+        // so exclude initial-letter floats from the clearance computation.
+        auto clear = clearInBlockFormattingContext(layoutBox);
+        auto lowestClearedPosition = std::optional<LayoutUnit> { };
+        for (auto& floatItem : placedFloats().list()) {
+            CheckedPtr floatItemBox = floatItem.layoutBox();
+            if (floatItemBox && floatItemBox->style().lineBoxContain().contains(Style::WebkitLineBoxContainValue::InitialLetter))
+                continue;
+            auto matchesClearSide = clear == Clear::Both
+                || (clear == Clear::Left && floatItem.isStartPositioned())
+                || (clear == Clear::Right && !floatItem.isStartPositioned());
+            if (!matchesClearSide)
+                continue;
+            auto floatBottom = floatItem.absoluteRectWithMargin().bottom();
+            lowestClearedPosition = std::max(lowestClearedPosition.value_or(floatBottom), floatBottom);
         }
-        return { };
+        return lowestClearedPosition;
     };
 
     auto absoluteCoordinates = this->absoluteCoordinates(layoutBox, borderBoxTopLeft);
