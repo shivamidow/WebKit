@@ -272,6 +272,23 @@ LayoutPoint FloatingContext::positionForFloat(const Box& layoutBox, const BoxGeo
     auto margins = BoxGeometry::Edges { { boxGeometry.marginStart(), boxGeometry.marginEnd() }, { boxGeometry.marginBefore(), boxGeometry.marginAfter() } };
     auto floatBox = FloatAvoider { absoluteTopLeft, boxGeometry.borderBoxWidth(), margins, absoluteCoordinates.containingBlockContentBox, true, isFloatingCandidateStartPositionedInBlockFormattingContext(layoutBox) };
     findAvailablePosition(floatBox, placedFloats().list(), absoluteCoordinates.containingBlockContentBox);
+    if (isInitialLetter) {
+        // findAvailablePosition() only considers the letter's top band, the avoider being height-less,
+        // so align past the widest overlapping start float to clear its full extent.
+        auto letterMarginBoxStart = floatBox.blockStart();
+        auto letterMarginBoxEnd = letterMarginBoxStart + boxGeometry.marginBoxHeight();
+        auto requiredInlineStart = std::optional<LayoutUnit> { };
+        for (auto& floatItem : placedFloats().list()) {
+            if (!floatItem.isStartPositioned())
+                continue;
+            auto floatRect = floatItem.absoluteRectWithMargin();
+            if (floatRect.bottom() <= letterMarginBoxStart || floatRect.top() >= letterMarginBoxEnd)
+                continue;
+            requiredInlineStart = std::max(requiredInlineStart.value_or(floatRect.right()), floatRect.right());
+        }
+        if (requiredInlineStart && *requiredInlineStart > floatBox.inlineStart())
+            floatBox.setInlineStart(*requiredInlineStart);
+    }
     // Convert box coordinates from formatting root back to containing block.
     auto containingBlockTopLeft = absoluteCoordinates.containingBlockTopLeft;
     return { floatBox.inlineStart() + margins.horizontal.start - containingBlockTopLeft.x(), floatBox.blockStart() + margins.vertical.before - containingBlockTopLeft.y() };
