@@ -261,9 +261,11 @@ LayoutPoint FloatingContext::positionForFloat(const Box& layoutBox, const BoxGeo
     auto blockStartCandidate = absoluteTopLeft.y();
     // Incoming float cannot be placed higher than existing floats (margin box of the last float).
     // Take the static position (where the box would go if it wasn't floating) and adjust it with the last float.
+    // An initial letter stays cap-aligned at the block's top, avoiding earlier floats horizontally.
+    auto isInitialLetter = layoutBox.style().lineBoxContain().contains(Style::WebkitLineBoxContainValue::InitialLetter);
     auto lastFloatAbsoluteTop = placedFloats().last()->absoluteRectWithMargin().top();
     auto lastOrClearedFloatPosition = std::max(clearPosition().value_or(lastFloatAbsoluteTop), lastFloatAbsoluteTop);
-    if (blockStartCandidate - boxGeometry.marginBefore() < lastOrClearedFloatPosition)
+    if (!isInitialLetter && blockStartCandidate - boxGeometry.marginBefore() < lastOrClearedFloatPosition)
         blockStartCandidate = lastOrClearedFloatPosition + boxGeometry.marginBefore();
 
     absoluteTopLeft.setY(blockStartCandidate);
