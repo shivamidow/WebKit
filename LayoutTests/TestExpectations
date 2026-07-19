@@ -6930,6 +6930,9 @@ imported/w3c/web-platform-tests/css/compositing/root-element-background-margin-o
 imported/w3c/web-platform-tests/css/compositing/mix-blend-mode/mix-blend-mode-stacking-context-002.html [ ImageOnlyFailure ]
 
 # webkit.org/b/261464 - Import WPT css/css-inline
+imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-float-001-vrl.html [ ImageOnlyFailure ]
+imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-with-tab-rtl.html [ ImageOnlyFailure ]
+imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-with-tab.html [ ImageOnlyFailure ]
 
 imported/w3c/web-platform-tests/css/css-inline/baseline-source/baseline-source-first-002.html [ Pass Failure ]
 imported/w3c/web-platform-tests/css/css-inline/baseline-source/baseline-source-first-003.html [ Pass Failure ]
@@ -8265,20 +8268,3 @@ accessibility/line-clamp-text.html [ Skip ]
 accessibility/isolated-tree/line-clamp-text.html [ Skip ]
 
 webkit.org/b/327137 imported/w3c/web-platform-tests/resource-timing/resource-timing-failed-fetch.html [ Failure Pass ]
-
-# Newly imported with wpt 221aceb1f809; the standard initial-letter property is not
-# implemented yet. webkit.org/b/319736
-imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-block-position-margins-slr.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-block-position-margins-srl.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-breaking-slr.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-breaking-srl.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-drop-initial-slr.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-drop-initial-srl.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-float-001-slr.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-float-001-srl.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-popover.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-raise-initial-slr.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-raise-initial-srl.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-sunk-initial-slr.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-sunk-initial-srl.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-sign-function.html [ Failure ]
