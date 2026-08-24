@@ -33,12 +33,19 @@ import argparse
 import glob
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
 
 OUTPUT_FILE = 'compile_commands.json'
 THIRD_PARTY_DIRECTORY = os.path.join('Source', 'ThirdParty')
+
+# `CompileC <output> <source> <variant> <arch> <language> <compiler identifier>`
+COMPILE_TASK_RE = re.compile(r'"CompileC (?P<output>[^"]*?\.o) (?P<source>[^"]*?) \S+ \S+ \S+ \S+"')
+
+# Enough to hold the longest description a chunk boundary could split.
+MAX_DESCRIPTION_LENGTH = 8192
 
 
 def expand_unified_sources(entries, source_dir, build_dir):
@@ -62,6 +69,99 @@ def expand_unified_sources(entries, source_dir, build_dir):
 
         with open(output_file) as expanded:
             return json.load(expanded)
+
+
+def compile_task_sources(manifest_file):
+    """Returns the sources of every compile task described by an llbuild manifest.
+
+    These manifests reach hundreds of megabytes, so scan them in chunks rather
+    than parsing them as JSON.
+    """
+    sources = set()
+    overlap = ''
+
+    with open(manifest_file, encoding='utf-8', errors='replace') as manifest:
+        while True:
+            chunk = manifest.read(8 * 1024 * 1024)
+            if not chunk:
+                break
+            text = overlap + chunk
+            for match in COMPILE_TASK_RE.finditer(text):
+                sources.add(match.group('source'))
+            overlap = text[-MAX_DESCRIPTION_LENGTH:]
+
+    return sources
+
+
+def build_graph_sources(built_products_dir):
+    """Returns every source the Xcode build graph compiles, or None if it cannot be read.
+
+    Xcode records its whole build graph, including the files that are already
+    up to date, so it tells us which compile commands the build directory is
+    missing.
+    """
+    built_products_dir = os.path.abspath(built_products_dir)
+    xcbuild_data_dir = os.path.join(os.path.dirname(built_products_dir), 'XCBuildData')
+    if not os.path.isdir(xcbuild_data_dir):
+        return None
+
+    configuration = os.path.basename(built_products_dir)
+    symroot = os.path.dirname(built_products_dir)
+
+    # Every build writes its own manifest, and a project built by a separate
+    # xcodebuild invocation (build-imagediff, for one) writes its own as well.
+    # Keep the newest manifest of every project matching this build directory.
+    manifest_files = {}
+    for request_file in glob.glob(os.path.join(xcbuild_data_dir, '*.xcbuilddata', 'build-request.json')):
+        try:
+            with open(request_file) as request:
+                build_request = json.load(request)
+            parameters = build_request['parameters']
+            if parameters['configurationName'] != configuration:
+                continue
+            if os.path.abspath(parameters['overrides']['commandLine']['table']['SYMROOT']) != symroot:
+                continue
+            container = build_request['containerPath']
+        except (KeyError, ValueError, OSError):
+            continue
+
+        manifest_file = os.path.join(os.path.dirname(request_file), 'manifest.json')
+        if not os.path.exists(manifest_file):
+            continue
+
+        newest = manifest_files.get(container)
+        if newest is None or os.path.getmtime(manifest_file) > os.path.getmtime(newest):
+            manifest_files[container] = manifest_file
+
+    if not manifest_files:
+        return None
+
+    sources = set()
+    for manifest_file in manifest_files.values():
+        sources |= compile_task_sources(manifest_file)
+
+    return sources or None
+
+
+def warn_about_missing_compile_commands(missing, graph_size):
+    counts = {}
+    for source in missing:
+        directory = os.path.dirname(os.path.relpath(source))
+        directory = os.path.sep.join(directory.split(os.path.sep)[:2])
+        counts[directory] = counts.get(directory, 0) + 1
+
+    lines = ['', 'Warning: %d of the %d compile tasks in the Xcode build graph '
+                 'wrote no compile commands:' % (len(missing), graph_size)]
+    for directory, count in sorted(counts.items(), key=lambda item: -item[1])[:10]:
+        lines.append('    %6d  %s' % (count, directory))
+    if len(counts) > 10:
+        lines.append('    (and %d more directories)' % (len(counts) - 10))
+    lines += ['Only the files a build compiles write compile commands. '
+              'Build from scratch to cover them all:',
+              '    rm -rf ./WebKitBuild',
+              '    Tools/Scripts/build-webkit --export-compile-commands']
+
+    print('\n'.join(lines))
 
 
 # Get command line args
@@ -138,6 +238,9 @@ for j_file_name in sorted(glob.glob(compile_commands_dir + "/*.json")):
     seen_entries.add(json_contents)
     entries.append(entry)
 
+# The build graph describes the bundles, so compare before expanding them.
+compiled_sources = set(entry['file'] for entry in entries)
+
 unified_source_count = sum(1 for entry in entries if 'UnifiedSource' in entry['file'])
 direct_entry_count = len(entries) - unified_source_count
 expanded_entry_count = 0
@@ -165,3 +268,11 @@ if expanded_entry_count:
     summary += "\n  (%d direct, %d expanded from %d unified sources)" \
                % (direct_entry_count, expanded_entry_count, unified_source_count)
 print(summary)
+
+graph_sources = build_graph_sources(opts.built_products_dir)
+if graph_sources is not None:
+    if not opts.include_third_party:
+        graph_sources = set(s for s in graph_sources if THIRD_PARTY_DIRECTORY not in s)
+    missing = graph_sources - compiled_sources
+    if missing:
+        warn_about_missing_compile_commands(missing, len(graph_sources))
