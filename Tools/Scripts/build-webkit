@@ -409,6 +409,7 @@ if (isWin() || isPlayStation() || (isJSCOnly() && isWindows())) {
     }
 
     push @command, argumentsForConfiguration();
+    push @command, "--export-compile-commands" if $exportCompileCommands;
     push @command, @ARGV;
     @command = extractNonMacOSHostConfiguration(\@command);
     $result = system(@command);

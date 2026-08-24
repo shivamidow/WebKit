@@ -37,17 +37,20 @@ use POSIX;
 
 my $showHelp = 0;
 my $clean = 0;
+my $exportCompileCommands = 0;
 
 my $programName = basename($0);
 my $usage = <<EOF;
 Usage: $programName [options] [options to pass to build system]
-  --help        Show this help message
-  --clean       Clean up the build directory
+  --help                     Show this help message
+  --clean                    Clean up the build directory
+  --export-compile-commands  Generate compile_commands.json (Xcode builds only)
 EOF
 
 my $result = GetOptions(
     'help' => \$showHelp,
     'clean' => \$clean,
+    'export-compile-commands' => \$exportCompileCommands,
 );
 
 if ($showHelp or not $result) {
@@ -63,6 +66,7 @@ chdirWebKit();
 overrideConfiguredXcodeWorkspace("");
 my @xcodeOptions = ("-target", "ImageDiff");
 push @xcodeOptions, XcodeOptions();
+push @xcodeOptions, XcodeExportCompileCommandsOptions() if $exportCompileCommands;
 
 # Build
 chdir "Tools/ImageDiff" or die;
