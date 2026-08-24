@@ -71,6 +71,39 @@ def expand_unified_sources(entries, source_dir, build_dir):
             return json.load(expanded)
 
 
+def stale_fragments(records):
+    """Returns the fragments that no longer describe how the tree is built.
+
+    Nothing ever removes a fragment, and its name carries a hash of the command,
+    so editing a build setting leaves the pre-edit fragment behind next to the
+    new one. Both then describe the same object with contradictory flags.
+    """
+    # A compilation database may state file and output relative to directory.
+    def absolute(entry, name):
+        path = entry.get(name)
+        return os.path.join(entry.get('directory', ''), path) if path else None
+
+    newest = {}
+    for fragment_file, entry in records:
+        output = absolute(entry, 'output')
+        if output is None:
+            continue
+        modified = os.path.getmtime(fragment_file)
+        if output not in newest or modified > newest[output][1]:
+            newest[output] = (fragment_file, modified)
+    current = set(fragment_file for fragment_file, _ in newest.values())
+
+    missing_source = []
+    superseded = []
+    for fragment_file, entry in records:
+        if not os.path.exists(absolute(entry, 'file')):
+            missing_source.append(fragment_file)
+        elif entry.get('output') is not None and fragment_file not in current:
+            superseded.append(fragment_file)
+
+    return missing_source, superseded
+
+
 def compile_task_sources(manifest_file):
     """Returns the sources of every compile task described by an llbuild manifest.
 
@@ -175,6 +208,7 @@ parser = argparse.ArgumentParser(description='Generate compile_commands.json for
 
 parser.add_argument('built_products_dir', metavar='built-products-dir', help='path to the build directory containing generated compile commands (ex: WebKitBuild/Release)')
 parser.add_argument('--delete-invalid', action='store_true', help='Delete any invalid json file')
+parser.add_argument('--delete-stale', action='store_true', help='Delete any stale json file')
 parser.add_argument('--include-third-party', action='store_true', help='Include code in Source/ThirdParty')
 opts = parser.parse_args()
 
@@ -207,7 +241,7 @@ if not os.path.exists(compile_commands_dir):
 # To prevent this from happening we should check that every json file we add is valid, and also ensure there are no
 # duplicate entries.
 
-entries = []
+records = []
 seen_entries = set()
 
 for j_file_name in sorted(glob.glob(compile_commands_dir + "/*.json")):
@@ -236,7 +270,17 @@ for j_file_name in sorted(glob.glob(compile_commands_dir + "/*.json")):
     if json_contents in seen_entries:
         continue
     seen_entries.add(json_contents)
-    entries.append(entry)
+    records.append((j_file_name, entry))
+
+missing_source, superseded = stale_fragments(records)
+stale = set(missing_source) | set(superseded)
+
+if opts.delete_stale:
+    for j_file_name in sorted(stale):
+        os.remove(j_file_name)
+        print("Deleted stale JSON File: " + j_file_name)
+
+entries = [entry for j_file_name, entry in records if j_file_name not in stale]
 
 # The build graph describes the bundles, so compare before expanding them.
 compiled_sources = set(entry['file'] for entry in entries)
@@ -267,6 +311,9 @@ summary = "Generated Compile Commands! %d entries" % len(entries)
 if expanded_entry_count:
     summary += "\n  (%d direct, %d expanded from %d unified sources)" \
                % (direct_entry_count, expanded_entry_count, unified_source_count)
+if stale:
+    summary += "\n  (%d stale fragment(s): %d missing source, %d superseded)" \
+               % (len(stale), len(missing_source), len(superseded))
 print(summary)
 
 graph_sources = build_graph_sources(opts.built_products_dir)
