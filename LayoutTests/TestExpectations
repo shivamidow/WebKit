@@ -6930,8 +6930,6 @@ imported/w3c/web-platform-tests/css/compositing/root-element-background-margin-o
 imported/w3c/web-platform-tests/css/compositing/mix-blend-mode/mix-blend-mode-stacking-context-002.html [ ImageOnlyFailure ]
 
 # webkit.org/b/261464 - Import WPT css/css-inline
-imported/w3c/web-platform-tests/css/css-inline/initial-letter/initial-letter-float-001-vrl.html [ ImageOnlyFailure ]
-
 imported/w3c/web-platform-tests/css/css-inline/baseline-source/baseline-source-first-002.html [ Pass Failure ]
 imported/w3c/web-platform-tests/css/css-inline/baseline-source/baseline-source-first-003.html [ Pass Failure ]
 imported/w3c/web-platform-tests/css/css-inline/baseline-source/baseline-source-last-002.html [ Pass Failure ]
