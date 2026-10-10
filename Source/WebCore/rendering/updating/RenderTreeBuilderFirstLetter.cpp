@@ -24,7 +24,7 @@
 #include "config.h"
 #include "RenderTreeBuilderFirstLetter.h"
 
-#include "FontCascade.h"
+#include "FontCascadeInlines.h"
 #include "NodeInlines.h"
 #include "RenderBlock.h"
 #include "RenderButton.h"
@@ -36,6 +36,7 @@
 #include "RenderView.h"
 #include "StyleComputedStyle+SettersInlines.h"
 #include "StyleChange.h"
+#include "StyleTabSize.h"
 #include <wtf/TZoneMallocInlines.h>
 #include <wtf/text/CharacterProperties.h>
 #include <wtf/unicode/CharacterNames.h>
@@ -60,8 +61,17 @@ static std::optional<Style::ComputedStyle> styleForFirstLetter(const RenderEleme
     if (initialLetterDrop >= 1 && firstLetterStyle.floating() == Float::None)
         firstLetterStyle.setFloating(firstLetterStyle.writingMode().isBidiLTR() ? Float::Left : Float::Right);
 
-    // We have to compute the correct font-size for the first-letter if it has an initial letter height set.
     auto* paragraph = firstLetterContainer.isRenderBlockFlow() ? &firstLetterContainer : firstLetterContainer.containingBlock();
+
+    // tab-size does not apply to ::first-letter, so its <number> keeps resolving against the paragraph's space
+    // advance. Pin it down to a length here, because the font-size synthesized below would otherwise scale the
+    // tab stops along with the letter.
+    if (auto spaces = firstLetterStyle.tabSize().trySpaces(); paragraph && spaces && !spaces->isZero()) {
+        auto tabStop = spaces->value * paragraph->style().fontCascade().primaryFont().spaceWidth();
+        firstLetterStyle.setTabSize({ Style::TabSize::Length { tabStop / firstLetterStyle.usedZoomForLength().value } });
+    }
+
+    // We have to compute the correct font-size for the first-letter if it has an initial letter height set.
     if (initialLetterHeight >= 1 && firstLetterStyle.metricsOfPrimaryFont().capHeight() && paragraph->style().metricsOfPrimaryFont().capHeight()) {
         // FIXME: For ideographic baselines, we want to go from line edge to line edge. This is equivalent to (N-1)*line-height + the font height.
         // We don't yet support ideographic baselines.
